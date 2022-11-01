@@ -1,0 +1,74 @@
+db.orders.aggregate([
+    {
+        $lookup:{
+            from:"order_details",
+            localField:"order_id",
+            foreignField:"order_id",
+            as:"ood"
+        }
+    },
+    {
+        $unwind:"$ood"
+    },
+    {
+        $lookup:{
+            from:"customers",
+            localField:"customer_id",
+            foreignField:"customer_id",
+            as:"oc"
+        }
+    },
+    {
+        $unwind:"$oc"
+    },
+    {
+        $lookup:{
+            from:"products",
+            localField:"ood.product_id",
+            foreignField:"product_id",
+            as:"op"
+        }
+    },
+    {
+        $unwind:"$op"
+    },
+    {
+        $match:{
+            $and:[
+                {
+                    "op.line":{
+                        $in:[
+                            "Electronic accessories",
+                            "Food and beverages"
+                        ]
+                    }
+                },
+                {
+                    "payment":"Ewallet"
+                }
+            ]
+        }
+    },
+    {
+        $project:{
+            _id:0,
+            "op.line":1,
+            "oc.gender":1,
+            "payment":1,
+            
+        }
+    },
+    {
+        $group:{
+            _id:{
+                "oc᎐gender":"$oc.gender",
+                "op᎐line":"$op.line",
+                "payment":"$payment"
+            },
+            "Count":{
+                $sum:1
+            }
+        }
+    },
+    
+]).pretty()

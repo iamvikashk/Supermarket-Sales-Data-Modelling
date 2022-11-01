@@ -1,0 +1,76 @@
+db.orders.aggregate([
+    {
+        $lookup:{
+            from:"order_details",
+            localField:"order_id",
+            foreignField:"order_id",
+            as:"ood"
+        }
+    },
+    {
+        $unwind:"$ood"
+    },
+    {
+        $lookup:{
+            from:"customers",
+            localField:"customer_id",
+            foreignField:"customer_id",
+            as:"oc"
+        }
+    },
+    {
+        $unwind:"$oc"
+    },
+    {
+        $lookup:{
+            from:"products",
+            localField:"ood.product_id",
+            foreignField:"product_id",
+            as:"op"
+        }
+    },
+    {
+        $unwind:"$op"
+    },
+    {
+        $match:{
+            "op.line":{
+                $in:[
+                    "Fashion accessories",
+                    "Sports and travel"
+                ]
+            }
+        }
+    },
+    {
+        $project:{
+            _id:0,
+            "total":{
+                $sum:[
+                    {
+                        $multiply:[
+                            "$op.unit_price",
+                            "$ood.quantity"
+                        ]
+                    },
+                    "$ood.tax"
+                ]
+            },
+            "op.line":1,
+            "oc.gender":1,
+            
+        }
+    },
+    {
+        $group:{
+            _id:{
+                "op᎐line":"$op.line",
+                "oc᎐gender":"$oc.gender"
+            },
+            "CategoryTotal":{
+                $sum:"$total"
+            }
+        }
+    },
+    
+]).pretty()
